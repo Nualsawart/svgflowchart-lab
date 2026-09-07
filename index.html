@@ -13,53 +13,25 @@ h1{margin:0;font-size:22px}.sub{font-size:13px;color:#69758a;margin-top:4px}
 .connectbar{background:#fafbfe;align-items:center}
 button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;background:#e8edf5;color:#243047}
 button:hover{filter:brightness(.97)}button:disabled{opacity:.45;cursor:not-allowed}
-
-/* ปุ่มเพิ่มสัญลักษณ์: รูป Flowchart จริง */
-.symbol-btn{
-  width:92px;height:48px;padding:0;background:#fff;color:#243047;
-  border:2px solid #39465a;border-radius:0;display:inline-flex;
-  align-items:center;justify-content:center;font-size:14px;
-  position:relative;overflow:visible;
-}
-.symbol-btn[data-add="start"],.symbol-btn[data-add="end"]{
-  border-radius:28px;
-}
-.symbol-btn[data-add="process"]{border-radius:0}
-.symbol-btn[data-add="input"],.symbol-btn[data-add="output"]{
-  border:0;background:transparent;
-}
-.symbol-btn[data-add="input"]::before,.symbol-btn[data-add="output"]::before{
-  content:"";position:absolute;inset:0;
-  border:2px solid #39465a;
-  background:#fff;
-  clip-path:polygon(12% 0,100% 0,88% 100%,0 100%);
-  z-index:0;
-}
-.symbol-btn[data-add="input"],.symbol-btn[data-add="output"]{isolation:isolate}
-.symbol-btn[data-add="input"] > span,.symbol-btn[data-add="output"] > span{position:relative;z-index:2}
-.symbol-btn[data-add="if"]{
-  border:0;background:transparent;padding:0;
-  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
-}
-.symbol-btn[data-add="if"]::before{
-  content:"";position:absolute;inset:0;background:#39465a;
-  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
-  z-index:0;
-}
-.symbol-btn[data-add="if"]::after{
-  content:"";position:absolute;inset:2px;background:#fff;
-  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
-  z-index:1;
-}
-.symbol-btn[data-add="if"]{color:#243047}
-.symbol-btn[data-add="connector"]{
-  width:52px;height:48px;border-radius:50%;
-  background:#f0e6ff;border:2px solid #65428d;color:#65428d;
-}
-.symbol-btn:focus-visible{outline:3px solid #8ab4ff;outline-offset:2px}
+.run{background:#222;color:#fff;font-size:16px}.undo{background:#eee4ff;color:#5d3b86}.clear{background:#ffe5e5;color:#a22}
+.connect{background:#dfeaff;color:#234f9b}.connector{background:#f0e6ff;color:#65428d}
+main{max-width:1250px;margin:18px auto;padding:0 16px}
+.help,.status{background:#fff;border:1px solid #ddd;border-radius:12px;padding:12px 15px;margin-bottom:14px;font-size:14px}
+.status{min-height:48px}.status.ok{border:2px solid #444}
+.canvas{height:740px;background:#fff;border:1px solid #ddd;border-radius:14px;overflow:auto}
+svg{display:block;width:100%;height:100%;min-width:950px;background:linear-gradient(#f8faff 1px,transparent 1px),linear-gradient(90deg,#f8faff 1px,transparent 1px);background-size:25px 25px}
+.node{cursor:grab}.node:active{cursor:grabbing}
+.node rect,.node polygon,.node ellipse{fill:#fff;stroke:#39465a;stroke-width:2}
+.node.selected rect,.node.selected polygon,.node.selected ellipse{stroke-width:4}
+.node text{pointer-events:none;user-select:none}
+.arrow{stroke:#657184;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+.edge-label{font-size:14px;font-weight:700;fill:#39465a}
+.port{fill:#fff;stroke:#3b82f6;stroke-width:2;cursor:crosshair;opacity:0}
+.node:hover .port,.node.selected .port,.connect-mode .port{opacity:1}
+.port.active{fill:#dbeafe;opacity:1}
+.temp-line{stroke:#3b82f6;stroke-width:2.5;stroke-dasharray:7 6;fill:none}
+.connector-port{fill:#fff;stroke:#3b82f6;stroke-width:2}
 @media(max-width:700px){header{display:block}h1{font-size:19px}.canvas{height:650px}.toolbar,.connectbar{padding:8px 10px}}
-.edge-hit{fill:none;stroke:transparent;stroke-width:18;cursor:pointer;pointer-events:stroke}
-.edge-hit:hover{stroke:rgba(60,120,255,.14)}
 </style>
 </head>
 <body>
@@ -69,15 +41,15 @@ button:hover{filter:brightness(.97)}button:disabled{opacity:.45;cursor:not-allow
 </header>
 
 <div class="toolbar">
-<button data-add="start" class="symbol-btn" title="สัญลักษณ์ Start / เริ่มต้น"><span>Start</span></button>
-<button data-add="input" class="symbol-btn"><span>Input</span></button>
-<button data-add="process" class="symbol-btn"><span>Process</span></button>
-<button data-add="output" class="symbol-btn"><span>Output</span></button>
-<button data-add="if" class="symbol-btn"><span>If</span></button>
-<button data-add="end" class="symbol-btn" title="สัญลักษณ์ End / สิ้นสุด"><span>End</span></button>
-<button data-add="connector" class="symbol-btn"><span>●</span></button>
+<button data-add="start">Start</button>
+<button data-add="input">Input</button>
+<button data-add="process">Process</button>
+<button data-add="output">Output</button>
+<button data-add="if">If</button>
+<button data-add="end">End</button>
+<button data-add="connector" class="connector">Connector</button>
 <button id="editBtn">แก้ข้อความ</button>
-<button id="deleteBtn">ลบ</button><button id="deleteEdgeBtn">ลบเส้น</button>
+<button id="deleteBtn">ลบ</button>
 <button id="undoBtn" class="undo">↶ Undo</button>
 <button id="clearBtn" class="clear">ล้างทั้งหมด</button>
 </div>
@@ -89,7 +61,7 @@ button:hover{filter:brightness(.97)}button:disabled{opacity:.45;cursor:not-allow
 
 <main>
 <div class="help">
-<b>วิธีใช้:</b> ปุ่มด้านบนเป็นสัญลักษณ์ Flowchart จริง → คลิกบล็อก → เพิ่มสัญลักษณ์ได้ทุกชนิด
+<b>วิธีใช้:</b> คลิกบล็อก → เพิ่มสัญลักษณ์ได้ทุกชนิด
 ไม่ล็อกว่า If ต้องต่ออะไร → ลากจาก <b>จุดเชื่อม</b> ด้านบน/ล่าง/ซ้าย/ขวา เพื่อสร้างเส้นเอง
 → ใช้ Connector รวมหลายเส้นก่อนเข้า End → รองรับการวนกลับเป็น Loop
 </div>
@@ -178,27 +150,9 @@ function nearestPort(n,pt){
  ports.sort((a,b)=>a[1]-b[1]);
  return ports[0][0];
 }
-function clearRunMessage(){
- status.className="status";
- status.textContent="พร้อมใช้งาน";
-}
-
 function addNode(type){
- clearRunMessage();
- if(type==="start"||type==="end"){
-  const existing=nodes.find(n=>n.type===type);
-  if(existing){
-   selectedId=existing.id;
-   connectMode=false;
-   connecting=false;
-   connectFrom=null;
-   connectFromPort=null;
-   connectBtn.textContent="เชื่อมบล็อก";
-   updateBranchButtons();
-   draw();
-   status.innerHTML=`เลือก <b>${type==="start"?"Start":"End"}</b> ที่มีอยู่แล้ว — มี ${type==="start"?"Start":"End"} ได้ 1 จุด`;
-   return;
-  }
+ if((type==="start"||type==="end")&&nodes.some(n=>n.type===type)){
+  status.textContent=`มี ${type==="start"?"Start":"End"} อยู่แล้ว`;return;
  }
  saveHistory();
  const n={id:nextId++,type,text:defaults[type],x:600,y:100,branch:null};
@@ -234,7 +188,6 @@ function addEdge(from,to,fromPort,toPort,label=""){
  edges.push({id:nextEdgeId++,from:from.id,to:to.id,fromPort,toPort,kind,label});
 }
 function connect(fromId,toId,fromPort,toPort){
- clearRunMessage();
  const a=nodes.find(n=>n.id===fromId),b=nodes.find(n=>n.id===toId);
  if(!a||!b)return;
  if(a.id===b.id && a.type==="connector"){status.textContent="Connector เดียวกันไม่ต้องเชื่อมกลับหาตัวเอง";return}
@@ -283,14 +236,11 @@ function edgePath(e){
  return`M ${p1.x} ${p1.y} L ${p1.x} ${midY} L ${p2.x} ${midY} L ${p2.x} ${p2.y}`;
 }
 function draw(){
- svg.classList.toggle("delete-edge-mode",deleteEdgeMode);
  edgesG.innerHTML="";tempG.innerHTML="";nodesG.innerHTML="";
  edges.forEach(e=>{
   const a=nodes.find(n=>n.id===e.from);
   if(!a)return;
-  const d=edgePath(e);
-  edgesG.innerHTML+=`<path class="edge-hit" data-edge-id="${e.id}" d="${d}"/>`;
-  edgesG.innerHTML+=`<path class="arrow" d="${d}"/>`;
+  edgesG.innerHTML+=`<path class="arrow" d="${edgePath(e)}"/>`;
   if(e.label){
    const b=nodes.find(n=>n.id===e.to),p1=anchor(a,e.fromPort),p2=anchor(b,e.toPort);
    const lx=(p1.x+p2.x)/2,ly=(p1.y+p2.y)/2-8;
@@ -346,29 +296,6 @@ function draw(){
   nodesG.appendChild(g);
  });
 }
-edgesG.addEventListener("click",e=>{
- const hit=e.target.closest(".edge-hit");
- if(!hit)return;
- e.stopPropagation();
-
- if(!deleteEdgeMode){
-  status.textContent='ต้องกด “ลบเส้น” ก่อน แล้วคลิกเส้นที่ต้องการลบ';
-  return;
- }
-
- const id=Number(hit.dataset.edgeId);
- const edge=edges.find(x=>x.id===id);
- if(!edge)return;
-
- saveHistory();
- edges=edges.filter(x=>x.id!==id);
-
- deleteEdgeMode=false;
- deleteEdgeBtn.textContent="ลบเส้น";
- draw();
- status.textContent="ลบเส้นแล้ว — กด Undo เพื่อย้อนกลับได้";
-});
-
 function beginConnect(n,port,e){
  connectMode=true;connecting=true;connectFrom=n.id;connectFromPort=port;currentPoint=svgPoint(e);
  connectBtn.textContent="ยกเลิกเชื่อม";
@@ -376,14 +303,12 @@ function beginConnect(n,port,e){
  draw();
 }
 function editNode(){
- clearRunMessage();
  const n=nodes.find(x=>x.id===selectedId);
  if(!n){alert("กรุณาคลิกเลือกบล็อกก่อน");return}
  const v=prompt("แก้ข้อความในบล็อก:",n.text);
  if(v!==null&&v.trim()!==n.text){saveHistory();n.text=v.trim();draw()}
 }
 function deleteNode(){
- clearRunMessage();
  const n=nodes.find(x=>x.id===selectedId);
  if(!n){alert("กรุณาคลิกเลือกบล็อกก่อน");return}
  saveHistory();
@@ -392,34 +317,9 @@ function deleteNode(){
  selectedId=null;draw();status.textContent="ลบบล็อกและเส้นที่เกี่ยวข้องแล้ว";
 }
 function clearAll(){
- if(!confirm("ต้องการล้าง Flowchart ทั้งหมดและรีเซ็ตกลับเป็น Start → End หรือไม่?"))return;
-
- // เก็บสถานะก่อนล้างไว้ให้ Undo ย้อนกลับได้ 1 ครั้ง
- saveHistory();
-
- nodes=[
-  {id:1,type:"start",text:"Start",x:600,y:80,branch:null},
-  {id:2,type:"end",text:"End",x:600,y:200,branch:null}
- ];
- edges=[
-  {id:1,from:1,to:2,fromPort:"bottom",toPort:"top",kind:"normal",label:""}
- ];
- selectedId=null;
- nextId=3;
- nextEdgeId=2;
- connectMode=false;
- connecting=false;
- connectFrom=null;
- connectFromPort=null;
- currentPoint=null;
- deleteEdgeMode=false;
- connectBtn.textContent="เชื่อมบล็อก";
- deleteEdgeBtn.textContent="ลบเส้น";
-
- // ล้างข้อความผล Run/สถานะทั้งหมด แล้วกลับสู่สถานะเริ่มต้น
- status.className="status";
- status.textContent="เริ่มต้นใหม่: Start → End";
- draw();
+ if(!nodes.length)return;
+ if(!confirm("ต้องการล้าง Flowchart ทั้งหมดหรือไม่?"))return;
+ saveHistory();nodes=[];edges=[];selectedId=null;draw();status.textContent="ล้างเรียบร้อย — กด Undo เพื่อย้อนกลับได้";
 }
 function svgPoint(e){
  const r=svg.getBoundingClientRect(),v=svg.viewBox.baseVal;
@@ -457,39 +357,12 @@ svg.addEventListener("pointerup",e=>{
  }
  if(dragging){dragging=null;status.textContent=dragMoved?"จัดตำแหน่งแล้ว":"เลือกบล็อกแล้ว";dragMoved=false}
 });
-svg.addEventListener("click",()=>{
- if(connectMode){cancelConnect();return}
- if(deleteEdgeMode)return;
- selectedId=null;
- draw();
- status.textContent="ไม่ได้เลือกบล็อก";
-});
+svg.addEventListener("click",()=>{if(connectMode){cancelConnect();return}selectedId=null;draw();status.textContent="ไม่ได้เลือกบล็อก"});
 function cancelConnect(){
  connectMode=false;connecting=false;connectFrom=null;connectFromPort=null;currentPoint=null;
  connectBtn.textContent="เชื่อมบล็อก";draw();status.textContent="ยกเลิกการเชื่อม";
 }
-connectBtn.addEventListener("click",()=>{
- clearRunMessage();
- if(deleteEdgeMode){
-  deleteEdgeMode=false;
-  deleteEdgeBtn.textContent="ลบเส้น";
- }
- if(connectMode)cancelConnect();
- else{
-  connectMode=true;
-  connectFrom=null;
-  connectFromPort=null;
-  connectBtn.textContent="ยกเลิกเชื่อม";
-  status.textContent="โหมดเชื่อมบล็อก: ลากจากจุดเชื่อมต้นทาง → จุดเชื่อมปลายทาง";
- }
-});
-deleteEdgeBtn.addEventListener("click",()=>{
- clearRunMessage();
- if(connectMode)cancelConnect();
- deleteEdgeMode=!deleteEdgeMode;
- deleteEdgeBtn.textContent=deleteEdgeMode?"ยกเลิกลบเส้น":"ลบเส้น";
- status.textContent=deleteEdgeMode?"โหมดลบเส้น: คลิกเส้นที่ต้องการลบ":"ยกเลิกโหมดลบเส้น";
-});
+connectBtn.addEventListener("click",()=>{if(connectMode)cancelConnect();else{connectMode=true;connectFrom=null;connectFromPort=null;connectBtn.textContent="ยกเลิกเชื่อม";status.textContent="โหมดเชื่อมบล็อก: คลิกต้นทาง → คลิกจุดเชื่อมปลายทาง"}});
 document.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()=>addNode(b.dataset.add)));
 document.getElementById("editBtn").onclick=editNode;
 document.getElementById("deleteBtn").onclick=deleteNode;
