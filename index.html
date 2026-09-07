@@ -60,6 +60,23 @@ button:hover{filter:brightness(.97)}button:disabled{opacity:.45;cursor:not-allow
 @media(max-width:700px){header{display:block}h1{font-size:19px}.canvas{height:650px}.toolbar,.connectbar{padding:8px 10px}}
 .edge-hit{fill:none;stroke:transparent;stroke-width:18;cursor:pointer;pointer-events:stroke}
 .edge-hit:hover{stroke:rgba(60,120,255,.14)}
+
+/* V20: Input / Output ต้องเป็นสี่เหลี่ยมด้านขนานเต็มรูป */
+.tool-btn.io{
+  position:relative;
+  overflow:visible;
+}
+.tool-btn.io .io-shape{
+  display:block;
+  width:46px;
+  height:28px;
+  margin:0 auto 4px;
+  border:2px solid currentColor;
+  background:transparent;
+  transform:skewX(-18deg);
+  box-sizing:border-box;
+}
+
 </style>
 </head>
 <body>
@@ -119,6 +136,8 @@ const tempG=document.getElementById("temp");
 const status=document.getElementById("status");
 const connectBtn=document.getElementById("connectBtn");
 const connectHint=document.getElementById("connectHint");
+const deleteEdgeBtn=document.getElementById("deleteEdgeBtn");
+let deleteEdgeMode=false;
 
 let nodes=[];
 let edges=[];
@@ -506,13 +525,26 @@ document.getElementById("runBtn").onclick=()=>{
   (missing.length?`<br><b>ยังไม่ถูกเชื่อม:</b> ${missing.map(n=>esc(n.text||typeName(n.type))).join(", ")}`:"<br>ทุกบล็อกเชื่อมถึง Start แล้ว");
 };
 
-// ตัวอย่างเริ่มต้น Start -> End
+// สถานะเริ่มต้น: Start → End
 nodes=[
  {id:1,type:"start",text:"Start",x:600,y:80,branch:null},
  {id:2,type:"end",text:"End",x:600,y:200,branch:null}
 ];
-edges=[{id:1,from:1,to:2,fromPort:"bottom",toPort:"top",kind:"normal",label:""}];
-nextId=3;nextEdgeId=2;draw();
+edges=[
+ {id:1,from:1,to:2,fromPort:"bottom",toPort:"top",kind:"normal",label:""}
+];
+selectedId=null;
+nextId=3;
+nextEdgeId=2;
+connectMode=false;
+connecting=false;
+connectFrom=null;
+connectFromPort=null;
+currentPoint=null;
+deleteEdgeMode=false;
+connectBtn.textContent="เชื่อมบล็อก";
+deleteEdgeBtn.textContent="ลบเส้น";
+draw();
 })();
 </script>
 </body>
