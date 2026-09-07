@@ -61,6 +61,24 @@ button:hover{filter:brightness(.97)}button:disabled{opacity:.45;cursor:not-allow
 .edge-hit{fill:none;stroke:transparent;stroke-width:18;cursor:pointer;pointer-events:stroke}
 .edge-hit:hover{stroke:rgba(60,120,255,.14)}
 
+
+main{max-width:1250px;margin:18px auto;padding:0 16px}
+.help,.status{background:#fff;border:1px solid #ddd;border-radius:12px;padding:12px 15px;margin-bottom:14px;font-size:14px}
+.status{min-height:48px}.status.ok{border:2px solid #444}
+.canvas{height:740px;background:#fff;border:1px solid #ddd;border-radius:14px;overflow:auto}
+svg{display:block;width:100%;height:100%;min-width:950px;background:linear-gradient(#f8faff 1px,transparent 1px),linear-gradient(90deg,#f8faff 1px,transparent 1px);background-size:25px 25px}
+.node{cursor:grab}.node:active{cursor:grabbing}
+.node rect,.node polygon,.node ellipse{fill:#fff;stroke:#39465a;stroke-width:2}
+.node.selected rect,.node.selected polygon,.node.selected ellipse{stroke-width:4}
+.node text{pointer-events:none;user-select:none;fill:#243047}
+.arrow{stroke:#657184;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+.edge-label{font-size:14px;font-weight:700;fill:#39465a}
+.port{fill:#fff;stroke:#3b82f6;stroke-width:2;cursor:crosshair;opacity:0}
+.node:hover .port,.node.selected .port,.connect-mode .port{opacity:1}
+.port.active{fill:#dbeafe;opacity:1}
+.temp-line{stroke:#3b82f6;stroke-width:2.5;stroke-dasharray:7 6;fill:none}
+.connector-port{fill:#fff;stroke:#3b82f6;stroke-width:2}
+
 /* V20: Input / Output ต้องเป็นสี่เหลี่ยมด้านขนานเต็มรูป */
 .tool-btn.io{
   position:relative;
@@ -76,6 +94,19 @@ button:hover{filter:brightness(.97)}button:disabled{opacity:.45;cursor:not-allow
   transform:skewX(-18deg);
   box-sizing:border-box;
 }
+
+
+/* V21: รูปสัญลักษณ์บนพื้นที่ทำงาน */
+#nodes .node rect,
+#nodes .node polygon,
+#nodes .node ellipse{
+  fill:#fff;
+  stroke:#39465a;
+  stroke-width:2;
+}
+#nodes .node text{fill:#243047}
+#edges .arrow{stroke:#657184;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+#edges .edge-label{fill:#39465a}
 
 </style>
 </head>
