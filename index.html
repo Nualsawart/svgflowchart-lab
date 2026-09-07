@@ -97,56 +97,126 @@ function addBranch(branch){
 }
 function layout(){
  const normal=nodes.filter(n=>!n.branch);
- normal.forEach((n,i)=>{n.x=550;n.y=80+i*125});
  const f=nodes.find(n=>n.type==="if");
- if(!f){svg.setAttribute("viewBox","0 0 1100 1000");return}
- const yes=nodes.filter(n=>n.branch==="yes"),no=nodes.filter(n=>n.branch==="no");
+
+ if(!f){
+  normal.forEach((n,i)=>{n.x=550;n.y=80+i*125});
+  svg.setAttribute("viewBox","0 0 1100 "+Math.max(1000,100+nodes.length*125));
+  return;
+ }
+
+ // ส่วนก่อน If อยู่แนวกลาง
+ const fi=normal.indexOf(f);
+ normal.forEach((n,i)=>{
+  if(i<=fi){n.x=550;n.y=80+i*125}
+ });
+
+ const yes=nodes.filter(n=>n.branch==="yes");
+ const no=nodes.filter(n=>n.branch==="no");
  yes.forEach((n,i)=>{n.x=300;n.y=f.y+175+i*105});
  no.forEach((n,i)=>{n.x=800;n.y=f.y+175+i*105});
- const maxBranch=Math.max(yes.length,no.length);
+
+ // End อยู่ตรงกลางด้านล่างสุดของทั้งสองแขนง
  const end=normal.find(n=>n.type==="end");
- if(end)end.y=f.y+175+Math.max(1,maxBranch)*105;
- normal.forEach(n=>{if(n!==f&&n.type!=="end"&&n.y>=end?.y)n.y-=0});
- svg.setAttribute("viewBox","0 0 1100 "+Math.max(1000,(end?end.y+150:f.y+500)));
+ if(end){
+  const maxCount=Math.max(yes.length,no.length,1);
+  end.x=550;
+  end.y=f.y+175+maxCount*105;
+ }
+
+ svg.setAttribute("viewBox","0 0 1100 "+Math.max(1000,(end?end.y+140:f.y+500)));
 }
-function line(x1,y1,x2,y2){return`<line class="arrow" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`}
 function draw(){
  ng.innerHTML="";ag.innerHTML="";
  const f=nodes.find(n=>n.type==="if");
  const normal=nodes.filter(n=>!n.branch);
- if(f){
-  const fi=normal.indexOf(f);
+
+ const line=(x1,y1,x2,y2)=>`<line class="arrow" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+ const path=(d)=>`<path class="arrow" d="${d}"/>`;
+
+ if(!f){
   for(let i=0;i<normal.length-1;i++){
-   if(normal[i].type==="if")continue;
-   if(normal[i+1].branch)continue;
-   if(i<fi)ag.innerHTML+=line(normal[i].x,normal[i].y+50,normal[i+1].x,normal[i+1].y-50);
-   else if(normal[i].type!=="end"&&normal[i+1].type!=="end")ag.innerHTML+=line(normal[i].x,normal[i].y+50,normal[i+1].x,normal[i+1].y-50);
-  }
-  const yes=nodes.filter(n=>n.branch==="yes"),no=nodes.filter(n=>n.branch==="no");
-  if(yes.length){
-   ag.innerHTML+=`<path class="arrow" d="M ${f.x-80} ${f.y} L ${yes[0].x} ${yes[0].y-50}"/>`;
-   ag.innerHTML+=`<text class="branch-label" x="${f.x-150}" y="${f.y-12}" text-anchor="middle">Yes</text>`;
-   for(let i=0;i<yes.length-1;i++)ag.innerHTML+=line(yes[i].x,yes[i].y+50,yes[i+1].x,yes[i+1].y-50);
-  }else ag.innerHTML+=`<text class="branch-label" x="${f.x-150}" y="${f.y-12}" text-anchor="middle">Yes</text>`;
-  if(no.length){
-   ag.innerHTML+=`<path class="arrow" d="M ${f.x+80} ${f.y} L ${no[0].x} ${no[0].y-50}"/>`;
-   ag.innerHTML+=`<text class="branch-label" x="${f.x+150}" y="${f.y-12}" text-anchor="middle">No</text>`;
-   for(let i=0;i<no.length-1;i++)ag.innerHTML+=line(no[i].x,no[i].y+50,no[i+1].x,no[i+1].y-50);
-  }else ag.innerHTML+=`<text class="branch-label" x="${f.x+150}" y="${f.y-12}" text-anchor="middle">No</text>`;
-  const end=normal.find(n=>n.type==="end");
-  if(end){
-   yes.length&&(ag.innerHTML+=`<path class="arrow" d="M ${yes[yes.length-1].x} ${yes[yes.length-1].y+50} L ${end.x-70} ${end.y-30}"/>`);
-   no.length&&(ag.innerHTML+=`<path class="arrow" d="M ${no[no.length-1].x} ${no[no.length-1].y+50} L ${end.x+70} ${end.y-30}"/>`);
+   const a=normal[i],b=normal[i+1];
+   ag.innerHTML+=line(a.x,a.y+50,b.x,b.y-50);
   }
  }else{
-  for(let i=0;i<normal.length-1;i++)ag.innerHTML+=line(normal[i].x,normal[i].y+50,normal[i+1].x,normal[i+1].y-50);
+  // เส้นแนวตั้งก่อนถึง If
+  const fi=normal.indexOf(f);
+  for(let i=0;i<fi;i++){
+   const a=normal[i],b=normal[i+1];
+   ag.innerHTML+=line(a.x,a.y+50,b.x,b.y-50);
+  }
+
+  const yes=nodes.filter(n=>n.branch==="yes");
+  const no=nodes.filter(n=>n.branch==="no");
+  const leftX=300,rightX=800;
+  const branchY=f.y+135;
+
+  // Yes: ออกจาก "มุมซ้าย" ของข้าวหลามตัด -> แนวนอน -> หักลง 90°
+  if(yes.length){
+   const first=yes[0];
+   ag.innerHTML+=path(
+    `M ${f.x-115} ${f.y} L ${leftX} ${f.y} L ${leftX} ${first.y-55}`
+   );
+   ag.innerHTML+=`<text class="branch-label" x="${f.x-155}" y="${f.y-10}" text-anchor="middle">Yes</text>`;
+   for(let i=0;i<yes.length-1;i++){
+    const a=yes[i],b=yes[i+1];
+    ag.innerHTML+=line(a.x,a.y+50,b.x,b.y-50);
+   }
+  }else{
+   ag.innerHTML+=`<path class="arrow" d="M ${f.x-115} ${f.y} L ${leftX} ${f.y} L ${leftX} ${f.y+55}"/>`;
+   ag.innerHTML+=`<text class="branch-label" x="${f.x-155}" y="${f.y-10}" text-anchor="middle">Yes</text>`;
+  }
+
+  // No: ออกจาก "มุมขวา" ของข้าวหลามตัด -> แนวนอน -> หักลง 90°
+  if(no.length){
+   const first=no[0];
+   ag.innerHTML+=path(
+    `M ${f.x+115} ${f.y} L ${rightX} ${f.y} L ${rightX} ${first.y-55}`
+   );
+   ag.innerHTML+=`<text class="branch-label" x="${f.x+155}" y="${f.y-10}" text-anchor="middle">No</text>`;
+   for(let i=0;i<no.length-1;i++){
+    const a=no[i],b=no[i+1];
+    ag.innerHTML+=line(a.x,a.y+50,b.x,b.y-50);
+   }
+  }else{
+   ag.innerHTML+=`<path class="arrow" d="M ${f.x+115} ${f.y} L ${rightX} ${f.y} L ${rightX} ${f.y+55}"/>`;
+   ag.innerHTML+=`<text class="branch-label" x="${f.x+155}" y="${f.y-10}" text-anchor="middle">No</text>`;
+  }
+
+  // เส้นจากแขนงทั้งสองกลับเข้า End ด้วยมุมฉาก
+  const end=normal.find(n=>n.type==="end");
+  if(end){
+   if(yes.length){
+    const last=yes[yes.length-1];
+    ag.innerHTML+=path(
+     `M ${last.x} ${last.y+50} L ${last.x} ${end.y-35} L ${end.x-75} ${end.y-35}`
+    );
+   }
+   if(no.length){
+    const last=no[no.length-1];
+    ag.innerHTML+=path(
+     `M ${last.x} ${last.y+50} L ${last.x} ${end.y-35} L ${end.x+75} ${end.y-35}`
+    );
+   }
+  }
  }
+
  nodes.forEach(n=>{
   const g=document.createElementNS("http://www.w3.org/2000/svg","g");
   g.setAttribute("class","node"+(selectedId===n.id?" selected":""));
   g.setAttribute("transform",`translate(${n.x},${n.y})`);
-  g.innerHTML=shape(n)+`<text text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">${esc(n.text)}</text>`;
-  g.onclick=e=>{e.stopPropagation();selectedId=n.id;updateBranchButtons();status.innerHTML="เลือก: <b>"+(n.branch?"Branch "+(n.branch==="yes"?"Yes":"No"):typeName(n.type))+"</b> — "+esc(n.text);draw()};
+  g.innerHTML=shape(n)+
+   `<text text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">${esc(n.text)}</text>`+
+   `<text text-anchor="middle" y="58" font-size="11" fill="#69758a">${n.branch?"Branch "+(n.branch==="yes"?"Yes":"No"):typeName(n.type)}</text>`;
+
+  g.onclick=e=>{
+   e.stopPropagation();
+   selectedId=n.id;
+   updateBranchButtons();
+   status.innerHTML="เลือก: <b>"+(n.branch?"Branch "+(n.branch==="yes"?"Yes":"No"):typeName(n.type))+"</b> — "+esc(n.text);
+   draw();
+  };
   g.ondblclick=e=>{e.stopPropagation();selectedId=n.id;editNode()};
   g.onpointerdown=e=>startDrag(e,n);
   ng.appendChild(g);
