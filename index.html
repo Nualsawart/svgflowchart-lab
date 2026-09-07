@@ -14,65 +14,49 @@ h1{margin:0;font-size:22px}.sub{font-size:13px;color:#69758a;margin-top:4px}
 button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;background:#e8edf5;color:#243047}
 button:hover{filter:brightness(.97)}button:disabled{opacity:.45;cursor:not-allowed}
 
-/* ปุ่มเพิ่มสัญลักษณ์: ทำให้หน้าตาเป็นรูป Flowchart จริง */
+/* ปุ่มเพิ่มสัญลักษณ์: รูป Flowchart จริง */
 .symbol-btn{
   width:92px;height:48px;padding:0;background:#fff;color:#243047;
   border:2px solid #39465a;border-radius:0;display:inline-flex;
   align-items:center;justify-content:center;font-size:14px;
+  position:relative;overflow:visible;
 }
 .symbol-btn[data-add="start"],.symbol-btn[data-add="end"]{
   border-radius:28px;
 }
-.symbol-btn[data-add="process"]{
-  border-radius:0;
-}
+.symbol-btn[data-add="process"]{border-radius:0}
 .symbol-btn[data-add="input"],.symbol-btn[data-add="output"]{
-  clip-path:polygon(12% 0,100% 0,88% 100%,0 100%);
+  border:0;background:transparent;
 }
-.symbol-btn[data-add="if"]{
-  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
-  border:0;
+.symbol-btn[data-add="input"]::before,.symbol-btn[data-add="output"]::before{
+  content:"";position:absolute;inset:0;
+  border:2px solid #39465a;
   background:#fff;
-  position:relative;
+  clip-path:polygon(12% 0,100% 0,88% 100%,0 100%);
+  z-index:0;
+}
+.symbol-btn[data-add="input"],.symbol-btn[data-add="output"]{isolation:isolate}
+.symbol-btn[data-add="input"] > span,.symbol-btn[data-add="output"] > span{position:relative;z-index:2}
+.symbol-btn[data-add="if"]{
+  border:0;background:transparent;padding:0;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
 }
 .symbol-btn[data-add="if"]::before{
-  content:"";
-  position:absolute;inset:0;
-  background:#39465a;
+  content:"";position:absolute;inset:0;background:#39465a;
   clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
-  z-index:-1;
+  z-index:0;
 }
 .symbol-btn[data-add="if"]::after{
-  content:"";
-  position:absolute;inset:2px;
-  background:#fff;
+  content:"";position:absolute;inset:2px;background:#fff;
   clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
-  z-index:-1;
+  z-index:1;
 }
+.symbol-btn[data-add="if"]{color:#243047}
 .symbol-btn[data-add="connector"]{
-  width:52px;height:48px;border-radius:50%;padding:0;
+  width:52px;height:48px;border-radius:50%;
+  background:#f0e6ff;border:2px solid #65428d;color:#65428d;
 }
-.symbol-btn[data-add="connector"]{background:#f0e6ff;border-color:#65428d;color:#65428d}
 .symbol-btn:focus-visible{outline:3px solid #8ab4ff;outline-offset:2px}
-
-.run{background:#222;color:#fff;font-size:16px}.undo{background:#eee4ff;color:#5d3b86}.clear{background:#ffe5e5;color:#a22}
-.connect{background:#dfeaff;color:#234f9b}.connector{background:#f0e6ff;color:#65428d}
-main{max-width:1250px;margin:18px auto;padding:0 16px}
-.help,.status{background:#fff;border:1px solid #ddd;border-radius:12px;padding:12px 15px;margin-bottom:14px;font-size:14px}
-.status{min-height:48px}.status.ok{border:2px solid #444}
-.canvas{height:740px;background:#fff;border:1px solid #ddd;border-radius:14px;overflow:auto}
-svg{display:block;width:100%;height:100%;min-width:950px;background:linear-gradient(#f8faff 1px,transparent 1px),linear-gradient(90deg,#f8faff 1px,transparent 1px);background-size:25px 25px}
-.node{cursor:grab}.node:active{cursor:grabbing}
-.node rect,.node polygon,.node ellipse{fill:#fff;stroke:#39465a;stroke-width:2}
-.node.selected rect,.node.selected polygon,.node.selected ellipse{stroke-width:4}
-.node text{pointer-events:none;user-select:none}
-.arrow{stroke:#657184;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
-.edge-label{font-size:14px;font-weight:700;fill:#39465a}
-.port{fill:#fff;stroke:#3b82f6;stroke-width:2;cursor:crosshair;opacity:0}
-.node:hover .port,.node.selected .port,.connect-mode .port{opacity:1}
-.port.active{fill:#dbeafe;opacity:1}
-.temp-line{stroke:#3b82f6;stroke-width:2.5;stroke-dasharray:7 6;fill:none}
-.connector-port{fill:#fff;stroke:#3b82f6;stroke-width:2}
 @media(max-width:700px){header{display:block}h1{font-size:19px}.canvas{height:650px}.toolbar,.connectbar{padding:8px 10px}}
 .edge-hit{fill:none;stroke:transparent;stroke-width:18;cursor:pointer;pointer-events:stroke}
 .edge-hit:hover{stroke:rgba(60,120,255,.14)}
@@ -85,13 +69,13 @@ svg{display:block;width:100%;height:100%;min-width:950px;background:linear-gradi
 </header>
 
 <div class="toolbar">
-<button data-add="start" class="symbol-btn">Start</button>
-<button data-add="input" class="symbol-btn">Input</button>
-<button data-add="process" class="symbol-btn">Process</button>
-<button data-add="output" class="symbol-btn">Output</button>
-<button data-add="if" class="symbol-btn">If</button>
-<button data-add="end" class="symbol-btn">End</button>
-<button data-add="connector" class="symbol-btn">●</button>
+<button data-add="start" class="symbol-btn" title="สัญลักษณ์ Start / เริ่มต้น"><span>Start</span></button>
+<button data-add="input" class="symbol-btn"><span>Input</span></button>
+<button data-add="process" class="symbol-btn"><span>Process</span></button>
+<button data-add="output" class="symbol-btn"><span>Output</span></button>
+<button data-add="if" class="symbol-btn"><span>If</span></button>
+<button data-add="end" class="symbol-btn" title="สัญลักษณ์ End / สิ้นสุด"><span>End</span></button>
+<button data-add="connector" class="symbol-btn"><span>●</span></button>
 <button id="editBtn">แก้ข้อความ</button>
 <button id="deleteBtn">ลบ</button><button id="deleteEdgeBtn">ลบเส้น</button>
 <button id="undoBtn" class="undo">↶ Undo</button>
@@ -212,7 +196,7 @@ function addNode(type){
    connectBtn.textContent="เชื่อมบล็อก";
    updateBranchButtons();
    draw();
-   status.innerHTML=`เลือก <b>${type==="start"?"Start":"End"}</b> ที่มีอยู่แล้ว — มีได้ 1 จุด`;
+   status.innerHTML=`เลือก <b>${type==="start"?"Start":"End"}</b> ที่มีอยู่แล้ว — มี ${type==="start"?"Start":"End"} ได้ 1 จุด`;
    return;
   }
  }
