@@ -98,6 +98,7 @@ let selectedId=null;
 let nextId=1;
 let history=[];
 let dragging=null;
+let dragMoved=false;
 let dx=0,dy=0;
 let connectMode=false;
 let connectFrom=null;
@@ -204,14 +205,13 @@ function addNode(type){
     // ถ้ามีบล็อกปกติตัวสุดท้าย ให้ต่อเข้า End
     const normal=nodes.filter(x=>!x.branch&&x.id!==n.id);
     const last=normal[normal.length-1];
-    if(last){
+    if(last && last.type!=="if"){
       edges=edges.filter(e=>e.to!==n.id);
       if(!edges.some(e=>e.from===last.id&&e.to===n.id))
         edges.push({from:last.id,to:n.id,kind:"normal"});
     }
   }else if(selected && selected.type==="if"){
-    // ถ้าเลือก If ให้ใช้ปุ่ม Yes/No โดยตรง เพื่อไม่ให้เกิดเส้นผิดแขนง
-    nodes.pop();
+    // เมื่อเลือก If ต้องใช้ปุ่ม Yes/No เพื่อสร้างแขนงเท่านั้น
     history.pop();
     alert("ถ้าเลือก If ให้กด “+ เพิ่มใน Yes” หรือ “+ เพิ่มใน No”");
     return;
@@ -279,15 +279,203 @@ function addBranch(branch){
 
   if(branchNodes.length){
     const last=branchNodes[branchNodes.length-1];
-    const oldEnd=edges.find(e=>e.from===last.id&&e.to===nodes.find(x=>x.type==="end")?.id);
-    if(oldEnd) edges=edges.filter(e=>e!==oldEnd);
+    // ย้ายเส้นปลายแขนงเดิมมาไว้ที่บล็อกใหม่
+    edges=edges.filter(e=>!(e.from===last.id&&e.kind===branch));
     edges.push({from:last.id,to:n.id,kind:branch});
   }else{
     edges.push({from:f.id,to:n.id,kind:branch});
   }
 
   const end=nodes.find(x=>x.type==="end");
-  if(end) edges.push({from:n.id,to:end.id,kind:branch});
+  if(end){
+    edges=edges.filter(e=>!(e.from===n.id&&e.to===end.id));
+    edges.push({from:n.id,to:end.id,kind:branch});
+  }
+
+  selectedId=n.id;
+  layout();
+  draw();
+  updateBranchButtons();
+  status.innerHTML=`เพิ่ม Process ในแขนง <b>${branch==="yes"?"Yes":"No"}</b> และเชื่อมต่อแล้ว`;
+}
+
+function connectNodes(fromId,toId){
+  if(fromId===toId){
+    status.textContent="ไม่สามารถเชื่อมบล็อกเข้าหาตัวเองได้";
+    return;
+  }
+
+  const a=nodes.find(n=>n.id===fromId);
+  const b=nodes.find(n=>n.id===toId);
+  if(!a||!b)return;
+
+  // Start ไม่มีเส้นเข้ามา และ End ไม่มีเส้นออกไป
+  if(b.type==="start"){
+    status.textContent="ไม่สามารถเชื่อมเข้าหา Start ได้";
+    return;
+  }
+  if(a.type==="end"){
+    status.textContent="ไม่สามารถเชื่อมออกจาก End ได้";
+    return;
+  }
+
+  // If ต้องเชื่อมไปยังบล็อกที่ระบุแขนง Yes/No
+  let kind="normal";
+  if(a.type==="if"){
+    if(!b.branch){
+      status.textContent="จาก If ให้ใช้ “+ เพิ่มใน Yes” หรือ “+ เพิ่มใน No” เพื่อสร้างแขนงก่อน";
+      return;
+    }
+    kind=b.branch;
+  }
+
+  // บล็อกในแขนงเดียวกันต้องอยู่ในแขนงเดียวกัน
+  if(a.branch && b.branch!==a.branch){
+    status.textContent="บล็อกในแขนงต้องเชื่อมต่ออยู่ใน Yes เดียวกัน หรือ No เดียวกัน";
+    return;
+  }
+
+  saveHistory();
+
+  // ป้องกันเส้นซ้ำ
+  edges=edges.filter(e=>!(e.from===a.id && e.kind===kind));
+
+  edges.push({from:a.id,to:b.id,kind});
+
+  connectMode=false;
+  connectFrom=null;
+  document.getElementById("connectBtn").textContent="เชื่อมบล็อก";
+  selectedId=b.id;
+  layout();
+  draw();
+  updateBranchButtons();
+
+  status.innerHTML=`เชื่อม <b>${esc(a.text)}</b> → <b>${esc(b.text)}</b> แล้ว`;
+}
+function addNode(type){
+  if(type==="start" && nodes.some(n=>n.type==="start")){
+    status.textContent="มี Start อยู่แล้ว"; return;
+  }
+  if(type==="end" && nodes.some(n=>n.type==="end")){
+    status.textContent="มี End อยู่แล้ว"; return;
+  }
+
+  saveHistory();
+
+  const n={
+    id:nextId++,
+    type:type,
+    text:defaults[type],
+    branch:null,
+    x:0,
+    y:0
+  };
+
+  const selected=nodes.find(n=>n.id===selectedId);
+  const end=nodes.find(n=>n.type==="end");
+
+  if(type==="start"){
+    nodes.unshift(n);
+    if(selected && selected.type==="start"){
+      // ไม่มีการเชื่อมซ้ำ
+    }else{
+      const first=nodes.find(x=>x.id!==n.id);
+      if(first){
+        edges=edges.filter(e=>!(e.to===first.id&&e.kind==="normal"));
+        edges.push({from:n.id,to:first.id,kind:"normal"});
+      }
+    }
+  }else if(type==="end"){
+    nodes.push(n);
+    // ถ้ามีบล็อกปกติตัวสุดท้าย ให้ต่อเข้า End
+    const normal=nodes.filter(x=>!x.branch&&x.id!==n.id);
+    const last=normal[normal.length-1];
+    if(last && last.type!=="if"){
+      edges=edges.filter(e=>e.to!==n.id);
+      if(!edges.some(e=>e.from===last.id&&e.to===n.id))
+        edges.push({from:last.id,to:n.id,kind:"normal"});
+    }
+  }else if(selected && selected.type==="if"){
+    // เมื่อเลือก If ต้องใช้ปุ่ม Yes/No เพื่อสร้างแขนงเท่านั้น
+    history.pop();
+    alert("ถ้าเลือก If ให้กด “+ เพิ่มใน Yes” หรือ “+ เพิ่มใน No”");
+    return;
+  }else if(selected && selected.branch){
+    // เพิ่มต่อจากบล็อกในแขนงเดิม
+    n.branch=selected.branch;
+    nodes.push(n);
+
+    const outgoing=edges.find(e=>e.from===selected.id&&e.kind===selected.branch);
+    if(outgoing){
+      outgoing.from=n.id;
+    }else{
+      const branchNodes=nodes.filter(x=>x.branch===n.branch);
+      const last=branchNodes[branchNodes.length-2];
+      if(last) edges.push({from:last.id,to:n.id,kind:n.branch});
+    }
+
+    // ต่อบล็อกใหม่กลับไป End
+    if(end){
+      edges=edges.filter(e=>!(e.from===selected.id&&e.to===end.id));
+      edges=edges.filter(e=>!(e.from===n.id&&e.to===end.id));
+      edges.push({from:n.id,to:end.id,kind:n.branch});
+    }
+  }else if(selected && selected.type!=="end"){
+    // แทรกต่อจากบล็อกที่เลือก
+    const outgoing=edges.filter(e=>e.from===selected.id&&e.kind==="normal");
+    outgoing.forEach(e=>e.from=n.id);
+    edges.push({from:selected.id,to:n.id,kind:"normal"});
+    nodes.push(n);
+  }else if(end){
+    const incoming=edges.filter(e=>e.to===end.id&&e.kind==="normal");
+    if(incoming.length){
+      incoming.forEach(e=>e.to=n.id);
+      edges.push({from:n.id,to:end.id,kind:"normal"});
+    }else{
+      nodes.push(n);
+      edges.push({from:n.id,to:end.id,kind:"normal"});
+    }
+  }else{
+    nodes.push(n);
+  }
+
+  selectedId=n.id;
+  layout();
+  draw();
+  updateBranchButtons();
+  status.innerHTML=`เพิ่ม <b>${typeName(type)}</b> และเชื่อมต่อแล้ว`;
+}
+function addBranch(branch){
+  const f=nodes.find(n=>n.id===selectedId&&n.type==="if");
+  if(!f){alert("กรุณาเลือกบล็อก If ก่อน");return}
+
+  saveHistory();
+
+  const n={
+    id:nextId++,
+    type:"process",
+    text:defaults.process,
+    branch:branch,
+    x:0,y:0
+  };
+
+  const branchNodes=nodes.filter(x=>x.branch===branch);
+  nodes.push(n);
+
+  if(branchNodes.length){
+    const last=branchNodes[branchNodes.length-1];
+    // ย้ายเส้นปลายแขนงเดิมมาไว้ที่บล็อกใหม่
+    edges=edges.filter(e=>!(e.from===last.id&&e.kind===branch));
+    edges.push({from:last.id,to:n.id,kind:branch});
+  }else{
+    edges.push({from:f.id,to:n.id,kind:branch});
+  }
+
+  const end=nodes.find(x=>x.type==="end");
+  if(end){
+    edges=edges.filter(e=>!(e.from===n.id&&e.to===end.id));
+    edges.push({from:n.id,to:end.id,kind:branch});
+  }
 
   selectedId=n.id;
   layout();
@@ -399,10 +587,16 @@ function draw(){
   nodesG.innerHTML="";
   arrowsG.innerHTML="";
 
+  const hasBranches = nodes.some(n=>n.branch==="yes"||n.branch==="no");
+
   edges.forEach(e=>{
     const a=nodes.find(n=>n.id===e.from);
     const b=nodes.find(n=>n.id===e.to);
     if(!a||!b)return;
+
+    // เมื่อ If มีแขนงแล้ว ห้ามวาดเส้นปกติจาก If ลง End
+    // เพราะเส้นออกจาก If ต้องเป็น Yes / No เท่านั้น
+    if(a.type==="if" && hasBranches && e.kind==="normal") return;
 
     arrowsG.innerHTML+=`<path class="arrow" d="${orthogonalPath(a,b,e.kind)}"/>`;
 
@@ -488,25 +682,40 @@ function deleteNode(){
 
   saveHistory();
 
-  // ต่อเส้นผ่านบล็อกที่ถูกลบ สำหรับเส้น normal
-  const incoming=edges.filter(e=>e.to===n.id && e.kind==="normal");
-  const outgoing=edges.filter(e=>e.from===n.id && e.kind==="normal");
+  // ลบเส้นที่เกี่ยวข้องกับบล็อกนี้
+  const incoming=edges.filter(e=>e.to===n.id);
+  const outgoing=edges.filter(e=>e.from===n.id);
 
   edges=edges.filter(e=>e.from!==n.id&&e.to!==n.id);
-  incoming.forEach(i=>{
-    outgoing.forEach(o=>{
-      edges.push({from:i.from,to:o.to,kind:"normal"});
-    });
-  });
-
   nodes=nodes.filter(x=>x.id!==n.id);
+
+  // ถ้าลบ Start ให้ไม่สร้างเส้นใหม่
+  // ถ้าลบ End ก็ปล่อยกราฟตามจริง
+  // ถ้าลบบล็อกปกติ ให้เชื่อมเส้น normal เดิมผ่านบล็อกที่ถูกลบ
+  if(n.type!=="if" && !n.branch){
+    const inNormal=incoming.filter(e=>e.kind==="normal");
+    const outNormal=outgoing.filter(e=>e.kind==="normal");
+    inNormal.forEach(i=>{
+      outNormal.forEach(o=>{
+        if(i.from!==o.to) edges.push({from:i.from,to:o.to,kind:"normal"});
+      });
+    });
+  }
+
+  // ถ้าลบ If ให้ลบแขนงของ If ที่ไม่มีต้นทาง
+  if(n.type==="if"){
+    const orphanIds=nodes.filter(x=>x.branch==="yes"||x.branch==="no").map(x=>x.id);
+    edges=edges.filter(e=>!orphanIds.includes(e.to) || e.kind==="normal");
+    nodes=nodes.filter(x=>x.branch===null);
+  }
+
+  // ถ้าลบ End ให้จบที่บล็อกสุดท้ายโดยไม่สร้าง End ใหม่
   selectedId=null;
   layout();
   draw();
   updateBranchButtons();
-  status.textContent="ลบบล็อกแล้ว และเชื่อมเส้นที่เหลือให้แล้ว";
+  status.textContent="ลบบล็อกแล้ว และจัดการเส้นที่เกี่ยวข้องให้แล้ว";
 }
-
 function clearAll(){
   if(!nodes.length)return;
   if(!confirm("ต้องการล้าง Flowchart ทั้งหมดหรือไม่?"))return;
@@ -522,8 +731,8 @@ function clearAll(){
 function startDrag(e,n){
   e.preventDefault();
   e.stopPropagation();
-  saveHistory();
   selectedId=n.id;
+  dragMoved=false;
   updateBranchButtons();
   dragging=n;
 
@@ -546,15 +755,20 @@ function svgPoint(e){
 svg.addEventListener("pointermove",e=>{
   if(!dragging)return;
   const p=svgPoint(e);
-  dragging.x=p.x+dx;
-  dragging.y=p.y+dy;
-  draw();
+  const nx=p.x+dx, ny=p.y+dy;
+  if(Math.abs(nx-dragging.x)>2 || Math.abs(ny-dragging.y)>2){
+    if(!dragMoved){ saveHistory(); dragMoved=true; }
+    dragging.x=nx;
+    dragging.y=ny;
+    draw();
+  }
 });
 
 svg.addEventListener("pointerup",()=>{
   if(!dragging)return;
   dragging=null;
-  status.textContent="จัดตำแหน่งบล็อกแล้ว";
+  status.textContent=dragMoved?"จัดตำแหน่งบล็อกแล้ว":"เลือกบล็อกแล้ว";
+  dragMoved=false;
 });
 
 svg.addEventListener("click",()=>{
