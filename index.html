@@ -1,1 +1,54 @@
-
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SVG Flowchart Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f6fa;color:#243047}
+header{background:white;padding:15px 20px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
+h1{margin:0;font-size:22px}.sub{font-size:13px;color:#69758a;margin-top:4px}
+.toolbar{background:white;padding:12px 20px;border-bottom:1px solid #ddd;display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:10px 14px;font-weight:bold;cursor:pointer;background:#e8edf5;color:#243047}
+.run{background:#222;color:white}.clear{background:#ffe5e5;color:#a22}
+main{max-width:1100px;margin:18px auto;padding:0 16px}.help,.status{background:white;border:1px solid #ddd;border-radius:12px;padding:12px 15px;margin-bottom:14px;font-size:14px}
+.canvas{height:650px;background:white;border:1px solid #ddd;border-radius:14px;overflow:auto}
+svg{width:100%;height:100%;min-width:700px;background:linear-gradient(#f8faff 1px,transparent 1px),linear-gradient(90deg,#f8faff 1px,transparent 1px);background-size:25px 25px}
+.node{cursor:pointer}.node shape{stroke:#39465a;stroke-width:2;fill:white}.node.selected shape{stroke-width:4}.arrow{stroke:#657184;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+@media(max-width:700px){header{display:block}h1{font-size:19px}.canvas{height:600px}}
+</style>
+</head>
+<body>
+<header><div><h1>SVG Flowchart Lab</h1><div class="sub">เครื่องมือเขียน Flowchart แบบง่าย สำหรับนักเรียน</div></div><button class="run" onclick="runFlow()">▶ Run</button></header>
+<div class="toolbar">
+<button onclick="add('start')">Start</button><button onclick="add('input')">Input</button><button onclick="add('process')">Process</button><button onclick="add('output')">Output</button><button onclick="add('if')">If</button><button onclick="add('end')">End</button>
+<button onclick="edit()">แก้ข้อความ</button><button onclick="del()">ลบ</button><button class="clear" onclick="clearAll()">ล้างทั้งหมด</button>
+</div>
+<main>
+<div class="help"><b>วิธีใช้:</b> กดสัญลักษณ์เพื่อเพิ่มบล็อก → คลิกเลือก → ดับเบิลคลิกแก้ข้อความ → ลากเพื่อจัดตำแหน่ง → Run เพื่อทดลองลำดับ</div>
+<div class="canvas"><svg id="svg" viewBox="0 0 900 900"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#657184"/></marker></defs><g id="arrows"></g><g id="nodes"></g></svg></div>
+<div class="status" id="status">เริ่มต้นด้วย Start หรือเลือกสัญลักษณ์ด้านบน</div>
+</main>
+<script>
+const svg=document.getElementById("svg"),ng=document.getElementById("nodes"),ag=document.getElementById("arrows"),st=document.getElementById("status");
+let a=[],sel=null,drag=null,dx=0,dy=0,id=1;
+const d={start:"Start",input:"รับค่า x",process:"x = x + 10",output:"แสดงค่า x",if:"x > 10 ?",end:"End"};
+function add(t){if((t=="start"||t=="end")&&a.some(n=>n.type==t))return; a.push({id:id++,type:t,text:d[t],x:450,y:80+a.length*110});sel=a[a.length-1].id;place();draw()}
+function place(){a.forEach((n,i)=>{n.x=450;n.y=80+i*110})}
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function shape(n){if(n.type=="start"||n.type=="end")return '<rect x="-90" y="-30" width="180" height="60" rx="30"/>';if(n.type=="process")return '<rect x="-100" y="-32" width="200" height="64"/>';if(n.type=="input"||n.type=="output")return '<polygon points="-105,-32 75,-32 105,32 -75,32"/>';return '<polygon points="0,-48 115,0 0,48 -115,0"/>'}
+function name(t){return {start:"Start / End",end:"Start / End",input:"Input",process:"Process",output:"Output",if:"Decision"}[t]}
+function draw(){ng.innerHTML="";ag.innerHTML="";for(let i=0;i<a.length-1;i++){let n=a[i],m=a[i+1];ag.innerHTML+=`<line class="arrow" x1="${n.x}" y1="${n.y+48}" x2="${m.x}" y2="${m.y-48}"/>`}a.forEach(n=>{let g=document.createElementNS("http://www.w3.org/2000/svg","g");g.setAttribute("class","node"+(sel==n.id?" selected":""));g.setAttribute("transform",`translate(${n.x},${n.y})`);g.innerHTML=shape(n)+`<text text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700" pointer-events="none">${esc(n.text)}</text><text text-anchor="middle" y="58" font-size="11" fill="#69758a" pointer-events="none">${name(n.type)}</text>`;g.onclick=e=>{e.stopPropagation();sel=n.id;draw();st.innerHTML="เลือก: <b>"+name(n.type)+"</b> — "+esc(n.text)};g.ondblclick=e=>{e.stopPropagation();sel=n.id;edit()};g.onpointerdown=e=>startDrag(e,n);ng.appendChild(g)})}
+function edit(){let n=a.find(x=>x.id==sel);if(!n)return alert("กรุณาเลือกบล็อกก่อน");let v=prompt("แก้ข้อความในบล็อก:",n.text);if(v&&v.trim()){n.text=v.trim();draw()}}
+function del(){let i=a.findIndex(x=>x.id==sel);if(i<0)return alert("กรุณาเลือกบล็อกก่อน");a.splice(i,1);sel=null;place();draw()}
+function clearAll(){if(confirm("ล้าง Flowchart ทั้งหมดหรือไม่?")){a=[];sel=null;draw();st.textContent="ล้างเรียบร้อย"}}
+function point(e){let r=svg.getBoundingClientRect();return{x:(e.clientX-r.left)*900/r.width,y:(e.clientY-r.top)*900/r.height}}
+function startDrag(e,n){drag=n;let p=point(e);dx=n.x-p.x;dy=n.y-p.y;svg.setPointerCapture(e.pointerId)}
+svg.onpointermove=e=>{if(!drag)return;let p=point(e);drag.x=p.x+dx;drag.y=p.y+dy;draw()}
+svg.onpointerup=()=>{if(drag){place();drag=null;draw()}}
+svg.onclick=()=>{sel=null;draw()}
+function runFlow(){if(!a.length)return alert("ยังไม่มี Flowchart");if(!a.some(n=>n.type=="start")||!a.some(n=>n.type=="end")){st.innerHTML="<b>Run ไม่ได้:</b> ต้องมี Start และ End";return}st.innerHTML="<b>ผลการ Run</b><br>"+a.map((n,i)=>(i+1)+". "+esc(n.text)).join("<br>")}
+add("start");add("end");
+</script>
+</body>
+</html>
